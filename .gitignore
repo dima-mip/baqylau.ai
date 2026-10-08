@@ -5,6 +5,7 @@ __pycache__/
 *.log
 data/logs/
 data/evidence/
+data/uploads/
 data/*.db
 dist/
 build/
