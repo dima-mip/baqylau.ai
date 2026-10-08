@@ -1,0 +1,12 @@
+# Baqylau — local AI proctoring
+__pycache__/
+*.py[cod]
+*.db
+*.log
+data/logs/
+data/evidence/
+data/*.db
+.DS_Store
+Thumbs.db
+.venv/
+venv/

@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block t %}Группы{% endblock %}{% block b %}
+<div class="pagehead"><div><small>СТРУКТУРА</small><h2>Группы и ученики</h2></div></div>
+<div class="card"><div class="sec">📚 Группы / классы</div>
+<form method="post" class="formrow"><input type="hidden" name="action" value="group">
+<input name="name" placeholder="Название (напр. 10А)" required>
+<input name="description" placeholder="Описание">
+<button class="btn p" type="submit">+ Группа</button></form>
+<div class="tblwrap"><table><tr><th>ID</th><th>Название</th><th>Описание</th></tr>
+{% for g in groups %}<tr><td>{{ g.id }}</td><td><b>{{ g.name }}</b></td><td>{{ g.description }}</td></tr>
+{% else %}<tr><td colspan="3"><div class="empty">Создайте первую группу</div></td></tr>{% endfor %}</table></div></div>
+<div class="card"><div class="sec">🧑‍🎓 Ученики</div>
+<form method="post" class="formrow"><input type="hidden" name="action" value="student">
+<input name="full_name" placeholder="ФИО" required>
+<input name="username" placeholder="Логин" required>
+<input name="password" placeholder="Пароль" value="1234">
+<select name="group_id">{% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
+<button class="btn y" type="submit">+ Ученик</button></form>
+<div class="tblwrap"><table><tr><th>ФИО</th><th>Логин</th><th>Группа</th><th></th></tr>
+{% for s in students %}<tr><td><b>{{ s.full_name }}</b></td><td>{{ s.username }}</td><td>{{ s.grp }}</td>
+<td><form method="post" style="display:inline"><input type="hidden" name="action" value="del_student">
+<input type="hidden" name="id" value="{{ s.id }}"><button class="btn r sm" type="submit">✕</button></form></td></tr>
+{% else %}<tr><td colspan="4"><div class="empty">Нет учеников</div></td></tr>{% endfor %}</table></div></div>
+{% endblock %}

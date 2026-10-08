@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block t %}Уведомления{% endblock %}{% block b %}
+<div class="pagehead"><div><small>ДОКАЗАТЕЛЬСТВА</small><h2>🔔 Уведомления</h2></div><div class="sp"></div>
+<form method="post"><button class="btn g sm" type="submit">Отметить все прочитанными</button></form></div>
+<div class="card">
+<div class="tblwrap"><table><tr><th>Время</th><th>Ученик</th><th>Тип</th><th>Детали</th><th>Файл</th></tr>
+{% for n in notes %}<tr{% if not n.seen %} class="unread"{% endif %}>
+<td class="ts">{{ n.ts|dt }}</td><td><b>{{ n.student }}</b></td>
+<td><span class="pill {{ 'CRITICAL' if n.kind=='RISK100' else 'MEDIUM' }}">{{ n.kind }}</span></td>
+<td>{{ n.detail }}</td>
+<td>{% if n.epath %}<a class="btn y sm" href="/evidence/{{ n.epath }}">Файл</a>{% endif %}</td></tr>
+{% else %}<tr><td colspan="5"><div class="empty">Пока тихо — нарушений нет 🙂</div></td></tr>{% endfor %}</table></div>
+<p class="hint">Файлы: локально <code>data/evidence/</code> (+ Google Drive, если настроен).</p></div>
+{% endblock %}

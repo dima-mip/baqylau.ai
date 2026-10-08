@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block t %}Вход{% endblock %}{% block b %}
+<div class="hero">
+  <div class="hero-left">
+    <div class="eyebrow"><img src="/static/brand.svg" alt="" style="width:26px;height:26px"><span class="n">01</span> BAQYLAU.AI · QOSTANAI · ЛОКАЛЬНЫЙ ПРОКТОРИНГ</div>
+    <h1>Честный экзамен.<br><span class="thin">Всё локально.</span><span class="dot">.</span></h1>
+    <p class="lede">Камера, взгляд и смартфон — под контролем.
+    Панель преподавателя лёгкая: вся тяжёлая работа идёт в приложении ученика.</p>
+    <div class="feats">
+      <div class="feat"><b>📱</b><span>Смартфон<br>YOLO</span></div>
+      <div class="feat"><b>👀</b><span>Взгляд<br>и голова</span></div>
+      <div class="feat"><b>🔒</b><span>Защита<br>окружения</span></div>
+    </div>
+    <div class="stats"><div><small>ОБЛАКА</small><b>0 — всё дома</b></div>
+    <div><small>СТОЛПА</small><b>CV + Security</b></div>
+    <div><small>РЕЖИМ</small><b>LAN / офлайн</b></div></div>
+  </div>
+  <div class="hero-right">
+    <div class="glass">
+      <h2>Вход</h2>
+      <p class="muted">Преподаватель / администратор</p>
+      {% if error %}<p class="err">{{ error }}</p>{% endif %}
+      <form method="post">
+        <input name="username" placeholder="Логин" required autocomplete="username">
+        <input name="password" type="password" placeholder="Пароль" required autocomplete="current-password">
+        <button class="btn dark big" type="submit">Войти →</button>
+      </form>
+      <p class="hint">Первый запуск: <b>admin / admin123</b> — смените после входа.</p>
+    </div>
+  </div>
+</div>{% endblock %}

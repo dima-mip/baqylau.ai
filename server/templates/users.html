@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block t %}Пользователи{% endblock %}{% block b %}
+<div class="pagehead"><div><small>ДОСТУП · ТОЛЬКО АДМИН</small><h2>Пользователи</h2></div></div>
+<div class="card">
+<form method="post" class="formrow"><input name="full_name" placeholder="ФИО" required>
+<input name="username" placeholder="Логин" required>
+<input name="password" placeholder="Пароль" value="1234">
+<select name="role"><option value="teacher">Преподаватель</option><option value="admin">Админ</option></select>
+<button class="btn p" type="submit">+ Добавить</button></form>
+<div class="tblwrap"><table><tr><th>Логин</th><th>Имя</th><th>Роль</th></tr>
+{% for u in users %}<tr><td><b>{{ u.username }}</b></td><td>{{ u.full_name }}</td>
+<td><span class="pill {{ 'CRITICAL' if u.role=='admin' else 'MEDIUM' }}">{{ u.role }}</span></td></tr>{% endfor %}</table></div></div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block t %}Экзамены{% endblock %}{% block b %}
+<div class="pagehead"><div><small>БАНК ТЕСТОВ</small><h2>Экзамены</h2></div><div class="sp"></div>
+<a class="btn g" href="/exams/new">+ Новый экзамен</a></div>
+<div class="card">
+<div class="tblwrap"><table><tr><th>ID</th><th>Название</th><th>Предмет</th><th>Мин</th><th>Вопросов</th><th></th></tr>
+{% for e in exams %}<tr><td>{{ e.row.id }}</td><td><b>{{ e.row.title }}</b></td><td>{{ e.row.subject }}</td>
+<td>{{ e.row.duration_min }}</td><td>{{ e.n }}</td>
+<td><form method="post" action="/exams/{{ e.row.id }}/delete"><button class="btn r sm" type="submit">✕</button></form></td></tr>
+{% else %}<tr><td colspan="6"><div class="empty">Создайте первый экзамен</div></td></tr>{% endfor %}</table></div></div>
+{% endblock %}

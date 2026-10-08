@@ -1,0 +1,102 @@
+{% extends "base.html" %}{% block t %}Панель{% endblock %}{% block b %}
+<section class="row1">
+  <div class="card exam">
+    <span class="live off" id="live"><i class="dot"></i><span id="liveTxt">Ожидание</span><span class="time" id="timer">00:00</span></span>
+    <h1 id="title">Экзамен не запущен</h1>
+    <div class="ctrl">
+      <form method="post" action="/session/start" style="display:contents" id="startForm">
+      <select class="sel-exam" name="exam_id" aria-label="Экзамен">{% for e in exams %}<option value="{{ e.id }}">{{ e.title }} ({{ e.subject }})</option>{% endfor %}</select>
+      <select name="group_id" aria-label="Группа">{% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
+      <button class="btn go" type="submit" id="go">▶ Запустить</button>
+      </form>
+      <form method="post" action="/session/stop" style="display:contents" id="stopForm">
+      <button class="btn stop" type="submit" id="stop" disabled><span>Завершить</span></button>
+      </form>
+    </div>
+  </div>
+  <div class="kpi lav"><span class="ic">📶</span><span class="lb">На связи</span><span class="n" id="kOn">—</span><span class="sub" id="kOnS"></span></div>
+  <div class="kpi yel" id="kRiskBox"><span class="ic">⚠️</span><span class="lb">Средний риск</span><span class="n" id="kRisk">—</span><span class="sub" id="kRiskS"></span></div>
+  <div class="kpi pink"><span class="ic">🔔</span><span class="lb">Уведомления</span><span class="n" id="kNt">0</span><span class="sub">требуют реакции</span></div>
+</section>
+
+<div class="cols">
+  <section>
+    <div class="bar">
+      <h2>Студенты</h2>
+      <button class="chip" data-f="all" aria-pressed="true">Все</button>
+      <button class="chip" data-f="on" aria-pressed="false">Онлайн</button>
+      <button class="chip" data-f="risk" aria-pressed="false">С риском</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+  <aside class="card ev">
+    <h3>Последние события</h3>
+    <ol id="events"></ol>
+  </aside>
+</div>
+<script>
+const LBL={face_missing:'Нет лица',phone:'Телефон в кадре',phone_raised:'Телефон поднят',
+reading_device:'Чтение с телефона',head_turn:'Поворот головы',head_sustained:'Взгляд в сторону',
+gaze_off:'Взгляд мимо',gaze_sustained:'Взгляд мимо',gaze_focus:'Взгляд + фокус',gaze_relaxed:'Невнимание',
+shortcut:'Горячие клавиши',focus_lost:'Уход из окна',multi_person:'Второй человек',drowsy:'Усталость',jaw:'Разговор?'};
+const lvl=r=>r>=65?['high','HIGH','var(--bad)','var(--bad)']:r>=45?['med','MEDIUM','var(--warn)','#F0A04B']:r>=20?['low','LOW','var(--ok)','#7CC24A']:['low','OK','var(--ok)','#7CC24A'];
+const faceSvg='<svg class="face" viewBox="0 0 120 80"><circle cx="60" cy="30" r="17" fill="#F3F0FF"/><path d="M22 80c0-20 17-30 38-30s38 10 38 30z" fill="#DAD3FD"/></svg>';
+let filter='all',t0=null,timer=null;
+const $=id=>document.getElementById(id);
+function fmtT(ts){const d=new Date(ts*1000);return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
+function tickCards(j){
+  document.querySelector('a[href="/notifications"]').innerHTML='Уведомления '+(j.unseen?`<span class="badge">${j.unseen}</span>`:'');
+  $('kNt').textContent=j.unseen;
+  const s=j.session||{active:false};
+  if(s.active){
+    if(!t0)t0=s.started_at*1000;
+    $('live').classList.remove('off');$('liveTxt').textContent='Идёт';
+    $('title').textContent=s.title||'Экзамен идёт';
+    $('go').disabled=true;$('stop').disabled=false;
+  }else{
+    t0=null;$('live').classList.add('off');$('liveTxt').textContent='Ожидание';
+    $('title').textContent='Экзамен не запущен';$('timer').textContent='00:00';
+    $('go').disabled=false;$('stop').disabled=true;
+  }
+  const on=j.cards.filter(c=>/с$/.test(c.ago));
+  $('kOn').textContent=on.length+'/'+j.cards.length;
+  $('kOnS').textContent=(j.cards.length-on.length)+' офлайн';
+  const avg=j.cards.length?Math.round(j.cards.reduce((a,c)=>a+c.risk,0)/j.cards.length):0;
+  const c=lvl(avg)[0];
+  $('kRisk').textContent=j.cards.length?avg:'—';
+  $('kRiskS').textContent=c==='high'?'высокий':c==='med'?'средний':'низкий';
+  $('kRiskBox').className='kpi '+(c==='high'?'pink':c==='med'?'yel':'lime');
+  const list=j.cards.filter(c=>filter==='all'||(filter==='on'&&/с$/.test(c.ago))||(filter==='risk'&&c.risk>30)).sort((a,b)=>b.risk-a.risk);
+  $('grid').innerHTML=list.length?list.map(c=>{
+    const [cl,nm,col,bar]=lvl(c.risk),live=/с$/.test(c.ago);
+    return `<article class="card st">
+      <div><div class="nm">${c.name}</div><div class="meta">${c.group} · ${c.exam}</div></div>
+      <div class="cam">${c.thumb?`<img src="data:image/jpeg;base64,${c.thumb}">`:faceSvg}${live?'<i class="frame"></i>':`<div class="off">Нет сигнала · ${c.ago}</div>`}<span class="lvl ${cl}">${nm}</span></div>
+      <div class="score"><b style="color:${col}">${Math.round(c.risk)}</b><span class="${live?'on':''}"><i></i>${live?'онлайн':'офлайн · '+c.ago}</span></div>
+      <div class="track"><div style="width:${Math.min(100,c.risk)}%;background:${bar}"></div><em style="left:20%"></em><em style="left:45%"></em><em style="left:65%"></em></div>
+      <div class="tags">${c.violations.length?c.violations.map(v=>`<span class="tag ${/phone|reading/.test(v.kind)?'ph':''}">${LBL[v.kind]||v.kind}</span>`).join(''):'<span class="tag none">Нарушений нет</span>'}</div>
+      <div class="acts"><a href="/notifications">Открыть</a><button data-w="${c.id}" data-n="${c.name}">Предупредить</button></div>
+    </article>`;}).join(''):'<div class="card empty">Здесь пока никого нет</div>';
+  document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>warn(+b.dataset.w,b.dataset.n));
+  $('events').innerHTML=(j.recent||[]).map(e=>{
+    const col=e.kind==='RISK100'?'var(--bad)':e.kind==='warn'?'var(--warn)':'#A5AB9C';
+    return `<li><i style="background:${col}"></i><div><b>${e.who}</b> — ${e.text}<small>${fmtT(e.t)}</small></div></li>`;}).join('')
+    ||'<li><div>Пока тихо</div></li>';
+}
+async function tick(){try{const r=await fetch('/api/teacher/state');const j=await r.json();
+if(j.error){location.href='/login';return;}tickCards(j);}catch(e){}}
+async function warn(id,name){
+  if(!confirm(`Отправить предупреждение ученику «${name}»?`))return;
+  await fetch('/api/warn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:id})});
+  tick();
+}
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));tick();});
+document.getElementById('stopForm').addEventListener('submit',e=>{
+  const b=document.getElementById('stop');
+  if(!b.classList.contains('sure')){e.preventDefault();b.classList.add('sure');b.querySelector('span').textContent='Точно завершить?';
+    setTimeout(()=>{b.classList.remove('sure');b.querySelector('span').textContent='Завершить';},3000);}
+});
+setInterval(()=>{if(t0){const s=Math.floor((Date.now()-t0)/1000);
+  document.getElementById('timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}},1000);
+setInterval(tick,4000);tick();
+</script>{% endblock %}
