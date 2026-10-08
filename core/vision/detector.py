@@ -7,6 +7,7 @@ persons in frame. Refactored from ``utils.electronicDevicesDetection`` and
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import dataclass, field
 
@@ -103,7 +104,19 @@ class ObjectDetector:
         try:
             from ultralytics import YOLO
 
-            self._model = YOLO(self.model_path)
+            from core.res import resource
+
+            candidates = [self.model_path]
+            if not os.path.isabs(self.model_path):
+                candidates.append(resource(self.model_path))
+                candidates.append(os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "..", self.model_path))
+            for cand in candidates:
+                if cand and os.path.exists(cand):
+                    self._model = YOLO(cand)
+                    break
+            else:
+                self._model = YOLO(self.model_path)  # may auto-download
             logger.info("YOLOv8 loaded from %s", self.model_path)
         except Exception as exc:  # missing weights / no ultralytics
             logger.warning("YOLO load failed (%s). Detector runs in stub mode.", exc)

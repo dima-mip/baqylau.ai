@@ -886,7 +886,12 @@ def run_bento(cfg, args, vision, eeg, risk, sync, alerts, student: str = "Дми
     import os
 
     app = QApplication.instance() or QApplication([])
-    qss_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bento_style.qss")
+    try:
+        from core.res import resource
+
+        qss_path = resource("ui", "bento_style.qss")
+    except Exception:
+        qss_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bento_style.qss")
     try:
         with open(qss_path, encoding="utf-8") as f:
             app.setStyleSheet(f.read())

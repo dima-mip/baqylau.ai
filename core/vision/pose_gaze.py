@@ -79,6 +79,19 @@ LANDMARKER_PATH = os.path.join(
 )
 
 
+def _default_landmarker_path() -> str:
+    """Bundled model path (frozen EXE aware). Prefers existing file."""
+    try:
+        from core.res import resource
+
+        bundled = resource("data", "models", "face_landmarker.task")
+        if os.path.exists(bundled):
+            return bundled
+    except Exception:
+        pass
+    return LANDMARKER_PATH
+
+
 def _try_import_legacy_facemesh():
     """Return (module, flavour) or (None, ''). Never raises."""
     # Newer wheels (>=0.10.x) dropped top-level `solutions`; older ones keep it.
@@ -250,7 +263,7 @@ class PoseGazeEstimator:
             from mediapipe.tasks.python import BaseOptions
 
             if hasattr(mp_vision, "FaceLandmarker"):
-                model = _ensure_landmarker_model()
+                model = _ensure_landmarker_model(_default_landmarker_path())
                 if model:
                     opts = mp_vision.FaceLandmarkerOptions(
                         base_options=BaseOptions(model_asset_path=model),

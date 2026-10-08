@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 def brand_svg_path() -> str:
+    try:
+        from core.res import resource
+
+        p = resource("ui", "brand.svg")
+        if os.path.exists(p):
+            return p
+    except Exception:
+        pass
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "brand.svg")
 
 

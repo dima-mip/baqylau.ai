@@ -6,6 +6,10 @@ __pycache__/
 data/logs/
 data/evidence/
 data/*.db
+dist/
+build/
+*.spec
+*.exe
 .DS_Store
 Thumbs.db
 .venv/

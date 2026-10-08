@@ -31,21 +31,24 @@
 | Второе лицо, уход из окна экзамена, запрещённые клавиши | HIGH/MEDIUM |
 | RISK 100 | фото + ~9 с видео → уведомление + локально (+ Drive) |
 
-## Быстрый старт
+## Запуск (Windows)
 
-```bash
-pip install -r requirements.txt
-pip install PySide6
-```
-
-**Панель (ПК преподавателя):**
+**Панель (ПК преподавателя):** двойной клик `start_server.bat`
+или вручную:
 ```bash
 cd baqylau
 python -m server.app   # http://<ip>:5050, первый вход: admin / admin123
 ```
 
-**Ученик:** `python main_gui.py` → окно входа (сервер + логин/пароль
-или локальный режим) → тест появляется после старта экзамена.
+**Ученик:** готовый `BaqylauStudent.exe` — из
+[Releases](https://github.com/dima-mip/baqylau.ai/releases) (не требует
+Python). Либо для разработки: `start_student.bat` / `python main_gui.py`.
+
+Сборка EXE из исходников: `build_exe.bat` (10–20 мин, нужен интернет
+для pip). Модели (`yolov8n.pt`, `face_landmarker.task`) уже вшиты.
+
+**Детали ученика:** окно входа (сервер + логин/пароль или локальный
+режим) → тест появляется после старта экзамена преподавателем.
 
 **Консольный HUD (разработка):** `python main.py --simulate-eeg`
 
