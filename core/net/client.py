@@ -90,6 +90,20 @@ class BaqylauClient:
     def submit(self, answers: list) -> dict:
         return self._req("POST", "/api/submit", {"answers": answers}) or {}
 
+    def image(self, path: str) -> bytes:
+        """Download question image bytes. Returns b'' on failure."""
+        try:
+            hdrs = {}
+            if self.token:
+                hdrs["X-Token"] = self.token
+            req = urllib.request.Request(self.base + path, headers=hdrs, method="GET")
+            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                data = r.read()
+            return data if len(data) <= 4 * 1024 * 1024 else b""
+        except Exception as exc:
+            logger.debug("image download failed: %s", exc)
+            return b""
+
     def heartbeat(self, risk: float, level: str, violations: list, thumb_jpg: bytes) -> bool:
         try:
             b64 = base64.b64encode(thumb_jpg).decode() if thumb_jpg else ""

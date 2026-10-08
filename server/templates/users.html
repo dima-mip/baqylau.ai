@@ -6,7 +6,8 @@
 <input name="password" placeholder="Пароль" value="1234">
 <select name="role"><option value="teacher">Преподаватель</option><option value="admin">Админ</option></select>
 <button class="btn p" type="submit">+ Добавить</button></form>
-<div class="tblwrap"><table><tr><th>Логин</th><th>Имя</th><th>Роль</th></tr>
+<div class="tblwrap"><table><tr><th>Логин</th><th>Имя</th><th>Роль</th><th></th></tr>
 {% for u in users %}<tr><td><b>{{ u.username }}</b></td><td>{{ u.full_name }}</td>
-<td><span class="pill {{ 'CRITICAL' if u.role=='admin' else 'MEDIUM' }}">{{ u.role }}</span></td></tr>{% endfor %}</table></div></div>
+<td><span class="pill {{ 'CRITICAL' if u.role=='admin' else 'MEDIUM' }}">{{ u.role }}</span></td>
+<td>{% if u.username != session.user.username %}<form method="post" action="/users/{{ u.id }}/delete" style="display:inline"><button class="btn r sm" type="submit" onclick="return confirm('Удалить {{ u.username }}?')">✕</button></form>{% endif %}</td></tr>{% endfor %}</table></div></div>
 {% endblock %}

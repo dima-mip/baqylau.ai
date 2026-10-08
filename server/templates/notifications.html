@@ -1,13 +1,24 @@
 {% extends "base.html" %}{% block t %}Уведомления{% endblock %}{% block b %}
-<div class="pagehead"><div><small>ДОКАЗАТЕЛЬСТВА</small><h2>🔔 Уведомления</h2></div><div class="sp"></div>
+<div class="pagehead"><div><small>ДОКАЗАТЕЛЬСТВА</small><h2><svg width="22" height="22" style="display:inline;vertical-align:-4px"><use href="#i-bell"/></svg> Уведомления</h2></div><div class="sp"></div>
 <form method="post"><button class="btn g sm" type="submit">Отметить все прочитанными</button></form></div>
 <div class="card">
-<div class="tblwrap"><table><tr><th>Время</th><th>Ученик</th><th>Тип</th><th>Детали</th><th>Файл</th></tr>
-{% for n in notes %}<tr{% if not n.seen %} class="unread"{% endif %}>
+<div class="tblwrap"><table id="notes"><tr><th>Время</th><th>Ученик</th><th>Тип</th><th>Детали</th><th>Превью</th><th></th></tr>
+{% for n in notes %}<tr{% if not n.seen %} class="unread"{% endif %} data-nid="{{ n.id }}">
 <td class="ts">{{ n.ts|dt }}</td><td><b>{{ n.student }}</b></td>
 <td><span class="pill {{ 'CRITICAL' if n.kind=='RISK100' else 'MEDIUM' }}">{{ n.kind }}</span></td>
 <td>{{ n.detail }}</td>
-<td>{% if n.epath %}<a class="btn y sm" href="/evidence/{{ n.epath }}">Файл</a>{% endif %}</td></tr>
-{% else %}<tr><td colspan="5"><div class="empty">Пока тихо — нарушений нет 🙂</div></td></tr>{% endfor %}</table></div>
+<td>{% if n.epath and n.epath.endswith('.mp4') %}<video controls preload="metadata" width="260" src="/evidence/{{ n.epath }}"></video>
+{% elif n.epath %}<a href="/evidence/{{ n.epath }}"><img src="/evidence/{{ n.epath }}" style="max-width:200px;border-radius:12px" loading="lazy"></a>
+{% endif %}</td>
+<td><button class="iconbtn" data-del="{{ n.id }}" title="Удалить"><svg width="16" height="16"><use href="#i-trash"/></svg></button></td></tr>
+{% else %}<tr><td colspan="6"><div class="empty">Пока тихо — нарушений нет</div></td></tr>{% endfor %}</table></div>
 <p class="hint">Файлы: локально <code>data/evidence/</code> (+ Google Drive, если настроен).</p></div>
+<script>
+document.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){
+if(!confirm('Удалить уведомление?'))return;
+var row=b.closest('tr'),id=b.dataset.del;
+fetch('/notifications/'+id+'/delete',{method:'POST',headers:{'X-Requested-With':'fetch'}})
+.then(function(r){if(!r.ok)throw 0;row.classList.add('bye');setTimeout(function(){row.remove();},380);})
+.catch(function(){alert('Не удалось удалить');});};});
+</script>
 {% endblock %}

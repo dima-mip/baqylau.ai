@@ -14,9 +14,9 @@
       </form>
     </div>
   </div>
-  <div class="kpi lav"><span class="ic">📶</span><span class="lb">На связи</span><span class="n" id="kOn">—</span><span class="sub" id="kOnS"></span></div>
-  <div class="kpi yel" id="kRiskBox"><span class="ic">⚠️</span><span class="lb">Средний риск</span><span class="n" id="kRisk">—</span><span class="sub" id="kRiskS"></span></div>
-  <div class="kpi pink"><span class="ic">🔔</span><span class="lb">Уведомления</span><span class="n" id="kNt">0</span><span class="sub">требуют реакции</span></div>
+  <div class="kpi lav"><span class="ic"><svg width="18" height="18"><use href="#i-signal"/></svg></span><span class="lb">На связи</span><span class="n" id="kOn">—</span><span class="sub" id="kOnS"></span></div>
+  <div class="kpi yel" id="kRiskBox"><span class="ic"><svg width="18" height="18"><use href="#i-chart"/></svg></span><span class="lb">Средний риск</span><span class="n" id="kRisk">—</span><span class="sub" id="kRiskS"></span></div>
+  <div class="kpi pink"><span class="ic"><svg width="18" height="18"><use href="#i-bell"/></svg></span><span class="lb">Уведомления</span><span class="n" id="kNt">0</span><span class="sub">требуют реакции</span></div>
 </section>
 
 <div class="cols">
@@ -43,7 +43,7 @@ const lvl=r=>r>=65?['high','HIGH','var(--bad)','var(--bad)']:r>=45?['med','MEDIU
 const faceSvg='<svg class="face" viewBox="0 0 120 80"><circle cx="60" cy="30" r="17" fill="#F3F0FF"/><path d="M22 80c0-20 17-30 38-30s38 10 38 30z" fill="#DAD3FD"/></svg>';
 let filter='all',t0=null,timer=null;
 const $=id=>document.getElementById(id);
-function fmtT(ts){const d=new Date(ts*1000);return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
+function fmtT(ts){if(!ts)return '—';const d=new Date(ts*1000);return isNaN(d)?'—':d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
 function tickCards(j){
   document.querySelector('a[href="/notifications"]').innerHTML='Уведомления '+(j.unseen?`<span class="badge">${j.unseen}</span>`:'');
   $('kNt').textContent=j.unseen;

@@ -2,7 +2,7 @@
 <div class="pagehead"><div><small>БАНК ТЕСТОВ</small><h2>Новый экзамен</h2></div></div>
 <div class="card">
 {% if error %}<p class="err">{{ error }}</p>{% endif %}
-<form method="post" onsubmit="return pack()">
+<form method="post" enctype="multipart/form-data" onsubmit="return pack()">
 <div class="formrow"><input name="title" placeholder="Название" required style="flex:2">
 <input name="subject" placeholder="Предмет">
 <input name="duration_min" type="number" value="30" min="1" style="width:90px"><span>мин</span></div>
@@ -12,16 +12,23 @@
 <button class="btn g" type="submit">Сохранить</button></form></div>
 <script>
 function addQ(q){q=q||{q:'',options:['','','',''],correct:0};
- const d=document.createElement('div');d.className='card yellow';
- d.innerHTML=`<input class="qt" placeholder="Вопрос" style="width:90%">
- ${q.options.map((o,i)=>`<br><input type="radio" name="c${document.querySelectorAll('#qs>div').length}" ${i===q.correct?'checked':''} value="${i}"><input class="qo" placeholder="Вариант ${i+1}" value="${o}">`).join('')}
+ const idx=document.querySelectorAll('#qs>div').length;
+ const d=document.createElement('div');d.className='card yellow';d.dataset.i=idx;
+ d.innerHTML=`<input class="qt" placeholder="Вопрос *" style="width:90%">
+ <br><label style="font-size:12px">Картинка к вопросу (до 3 МБ): <input type="file" name="qimg_${idx}" accept="image/*"></label>
+ ${q.options.map((o,i)=>`<br><input type="radio" name="c${idx}" ${i===q.correct?'checked':''} value="${i}"><input class="qo" placeholder="Вариант ${i+1}" value="${o}">`).join('')}
  <br><button class="btn r sm" type="button" onclick="this.parentNode.remove()">Убрать вопрос</button>`;
  document.getElementById('qs').appendChild(d);}
-function pack(){const out=[];
- document.querySelectorAll('#qs>div').forEach(d=>{
-  const opts=[...d.querySelectorAll('.qo')].map(i=>i.value);
+function pack(){const out=[];let bad='';
+ document.querySelectorAll('#qs>div').forEach((d,ord)=>{
+  d.querySelector('input[type=file]').name='qimg_'+ord;
+  const opts=[...d.querySelectorAll('.qo')].map(i=>i.value.trim()).filter(o=>o);
   const c=d.querySelector('input[type=radio]:checked');
-  out.push({q:d.querySelector('.qt').value,options:opts,correct:c?+c.value:0});});
+  const t=d.querySelector('.qt').value.trim();
+  if(!t)bad='У всех вопросов должен быть текст';
+  else if(opts.length<2)bad='Нужно минимум 2 варианта ответа';
+  else out.push({q:d.querySelector('.qt').value,options:[...d.querySelectorAll('.qo')].map(i=>i.value),correct:c?+c.value:0});});
+ if(bad){alert(bad);return false;}
  if(!out.length){alert('Добавьте хотя бы один вопрос');return false;}
  document.getElementById('qj').value=JSON.stringify(out);return true;}
 addQ();

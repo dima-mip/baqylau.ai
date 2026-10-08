@@ -207,7 +207,7 @@ class BentoWindow(QMainWindow):
             self._sess_timer = QTimer(self)
             self._sess_timer.timeout.connect(self._poll_session)
             self._sess_timer.start(5000)
-            self.badge.setText("⏳ Ожидание экзамена…")
+            self.badge.setText("Ожидание экзамена…")
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick_clock)
         self._timer.start(1000)
@@ -342,7 +342,9 @@ class BentoWindow(QMainWindow):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setMinimumHeight(180)
+        scroll.viewport().setAutoFillBackground(False)
         self.exam_body = QWidget()
+        self.exam_body.setAutoFillBackground(False)
         self.exam_body.setLayout(QVBoxLayout())
         scroll.setWidget(self.exam_body)
         self.exam_card.layout().addWidget(scroll, 1)
@@ -363,11 +365,11 @@ class BentoWindow(QMainWindow):
         ctrl.setObjectName("ControlCard")
         ctrl.setProperty("card", True)
         cl = QHBoxLayout(ctrl)
-        self.btn_snap = QPushButton("📸  Сделать снимок")
+        self.btn_snap = QPushButton("Сделать снимок")
         self.btn_snap.setObjectName("BtnSnap")
-        self.btn_calib = QPushButton("🎯  Калибровка")
+        self.btn_calib = QPushButton("Калибровка")
         self.btn_calib.setObjectName("BtnPause")
-        self.btn_pause = QPushButton("⏸  Пауза")
+        self.btn_pause = QPushButton("Пауза")
         self.btn_pause.setObjectName("BtnPause")
         self.btn_quit = QPushButton("■  Завершить")
         self.btn_quit.setObjectName("BtnQuit")
@@ -501,7 +503,7 @@ class BentoWindow(QMainWindow):
             prompt = ""
         self.calib_label.setVisible(bool(prompt))
         if prompt:
-            self.calib_label.setText(f"🎯 {prompt}")
+            self.calib_label.setText(prompt)
             self._calib_was = True
         elif getattr(self, "_calib_was", False):
             self._calib_was = False
@@ -574,7 +576,7 @@ class BentoWindow(QMainWindow):
             self.risk_big.setText("RISK —")
             self.risk_level.setText("Калибровка…")
             self.risk_level.setStyleSheet("color:#6B6B6B; font-size:16px; font-weight:800;")
-            self.badge.setText("🎯 Калибровка…")
+            self.badge.setText("Калибровка…")
             return
         self.risk_big.setText(f"RISK {rs.score:.0f}")
         self.risk_level.setText(rs.level)
@@ -684,10 +686,26 @@ class BentoWindow(QMainWindow):
 
             self._exam_groups = []
             for qi, q in enumerate(qs):
-                qlbl = QLabel(f"{qi + 1}. {q.get('q', '')}")
+                qtext = str(q.get("q", "")).strip() or "(вопрос без текста)"
+                qlbl = QLabel(f"{qi + 1}. {qtext}")
                 qlbl.setObjectName("ExamQ")
                 qlbl.setWordWrap(True)
                 self.exam_body.layout().addWidget(qlbl)
+                if q.get("image"):
+                    try:
+                        from PySide6.QtGui import QPixmap
+
+                        raw = self.client.image(q["image"]) if self.client else b""
+                        if raw:
+                            pm = QPixmap()
+                            if pm.loadFromData(raw):
+                                img = QLabel()
+                                img.setPixmap(pm.scaledToWidth(
+                                    520, Qt.SmoothTransformation))
+                                img.setStyleSheet("border-radius:14px;")
+                                self.exam_body.layout().addWidget(img)
+                    except Exception as exc:
+                        logger.debug("question image failed: %s", exc)
                 grp = QButtonGroup(self)
                 for oi, opt in enumerate(q.get("options", [])):
                     rb = QRadioButton(str(opt))
@@ -839,7 +857,7 @@ class BentoWindow(QMainWindow):
         self._paused = not self._paused
         self.badge.setText("⏸ Пауза" if self._paused else "● Экзамен активен")
         self.badge.setProperty("class", "paused" if self._paused else "")
-        self.btn_pause.setText("▶  Продолжить" if self._paused else "⏸  Пауза")
+        self.btn_pause.setText("Продолжить" if self._paused else "Пауза")
 
     def _tick_clock(self) -> None:
         s = int(time.time() - self._t0)

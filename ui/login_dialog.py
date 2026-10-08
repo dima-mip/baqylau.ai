@@ -111,7 +111,7 @@ class LoginDialog(QDialog):
 
         chips = QHBoxLayout()
         chips.setSpacing(8)
-        for text in ("📷 Взгляд", "📱 Смартфон", "🔒 Защита"):
+        for text in ("Взгляд", "Смартфон", "Защита"):
             ch = QLabel(text)
             ch.setObjectName("Chip")
             chips.addWidget(ch)

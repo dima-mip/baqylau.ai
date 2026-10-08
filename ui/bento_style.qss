@@ -35,15 +35,15 @@ QPushButton {
   border: none; border-radius: 18px; padding: 13px 20px;
   font-size: 14px; font-weight: 800; color: #1A1A1A;
 }
-QPushButton:pressed { padding-top: 14px; padding-bottom: 12px; }
+QPushButton:pressed { background: #E8E8E8; }
 QPushButton:disabled { background: #E4E4E4; color: #999999; }
 QPushButton#BtnSnap { background: #D4F5A6; }
-QPushButton#BtnSnap:hover { background: #C2EE90; }
+QPushButton#BtnSnap:hover { background: #CDF3A6; }
 QPushButton#BtnPause { background: #FFF4A3; }
-QPushButton#BtnPause:hover { background: #FFE970; }
+QPushButton#BtnPause:hover { background: #FFF3B0; }
 QPushButton#BtnQuit { background: #FFC1C1; }
-QPushButton#BtnQuit:hover { background: #FFA8A8; }
-QPushButton#BtnQuit:pressed { background: #FF9797; }
+QPushButton#BtnQuit:hover { background: #FFB5B5; }
+QPushButton#BtnQuit:pressed { background: #FFA8A8; }
 QProgressBar { background: rgba(255,255,255,0.65); border: none; border-radius: 9px; height: 18px; text-align: center; font-size: 11px; font-weight: 800; color: #1A1A1A; }
 QProgressBar::chunk { border-radius: 9px; background: #1A1A1A; }
 QProgressBar#FocusBar::chunk { background: #2E7D32; }
@@ -57,6 +57,8 @@ QScrollBar::handle:vertical { background: #CFCFCF; border-radius: 5px; min-heigh
 QScrollBar::handle:vertical:hover { background: #1A1A1A; }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 QScrollArea { border: none; background: transparent; }
+QScrollArea QWidget { background: transparent; }
+QScrollArea QRadioButton#ExamOpt[picked="true"] { background: #D8D4FF; }
 QRadioButton { font-size: 14px; color: #1A1A1A; spacing: 10px; padding: 6px 4px; }
 QRadioButton::indicator { width: 20px; height: 20px; border-radius: 11px; border: 2px solid #BDBDBD; background: #FFFFFF; }
 QRadioButton::indicator:hover { border: 2px solid #1A1A1A; }

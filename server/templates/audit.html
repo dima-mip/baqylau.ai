@@ -1,14 +1,16 @@
 {% extends "base.html" %}{% block t %}Аудит{% endblock %}{% block b %}
-<div class="pagehead"><div><small>ВСЯ ИНФОРМАЦИЯ · ТОЛЬКО АДМИН</small><h2>📋 Аудит</h2></div></div>
+<div class="pagehead"><div><small>ВСЯ ИНФОРМАЦИЯ · ТОЛЬКО АДМИН</small><h2><svg width="22" height="22" style="display:inline;vertical-align:-4px"><use href="#i-doc"/></svg> Аудит</h2></div></div>
 <div class="card"><div class="sec">Действия</div>
 <div class="tblwrap"><table><tr><th>ID</th><th>Время</th><th>Кто</th><th>Тип</th><th>Детали</th></tr>
 {% for r in rows %}<tr><td>{{ r.id }}</td><td class="ts">{{ r.ts|dt }}</td><td>{{ r.actor }}</td><td>{{ r.kind }}</td><td>{{ r.detail }}</td></tr>
 {% else %}<tr><td colspan="5"><div class="empty">Пусто</div></td></tr>{% endfor %}</table></div></div>
 <div class="card"><div class="sec">Все доказательства (фото/видео)</div>
-<div class="tblwrap"><table><tr><th>ID</th><th>Ученик</th><th>Тип</th><th>Риск</th><th>Где</th><th>Файл</th></tr>
+<div class="tblwrap"><table><tr><th>ID</th><th>Ученик</th><th>Тип</th><th>Риск</th><th>Где</th><th>Превью</th></tr>
 {% for e in evs %}<tr><td>{{ e.id }}</td><td><b>{{ e.student }}</b></td><td>{{ e.kind }}</td><td>{{ e.risk }}</td>
-<td>{{ '☁️ Drive' if e.drive_link else '💾 Локально' }}</td>
-<td><a class="btn y sm" href="/evidence/{{ e.path }}">Открыть</a></td></tr>
+<td>{{ 'Drive' if e.drive_link else 'Локально' }}</td>
+<td>{% if e.path.endswith('.mp4') %}<video controls preload="metadata" width="300" src="/evidence/{{ e.path }}"></video>
+{% elif e.path %}<a href="/evidence/{{ e.path }}"><img src="/evidence/{{ e.path }}" style="max-width:220px;border-radius:12px" loading="lazy"></a>
+{% else %}—{% endif %}</td></tr>
 {% else %}<tr><td colspan="6"><div class="empty">Нет файлов</div></td></tr>{% endfor %}</table></div></div>
 <div class="card"><div class="sec">Все результаты тестов</div>
 <div class="tblwrap"><table><tr><th>Ученик</th><th>Экзамен</th><th>Балл</th></tr>

@@ -23,6 +23,9 @@ logger = logging.getLogger("baqylau")
 
 DB = os.environ.get("BAQYLAU_DB", "data/baqylau.db")
 EVIDENCE_DIR = os.environ.get("BAQYLAU_EVIDENCE", "data/evidence")
+UPLOAD_DIR = os.environ.get("BAQYLAU_UPLOADS", "data/uploads")
+IMG_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+IMG_MAX_BYTES = 3 * 1024 * 1024
 
 MAIN_VIOLATIONS = ("face_missing", "phone", "phone_raised", "reading_device",
                    "head_sustained", "gaze_sustained", "focus_lost", "shortcut")
@@ -31,6 +34,7 @@ MAIN_VIOLATIONS = ("face_missing", "phone", "phone_raised", "reading_device",
 def create_app(db_path: str = DB) -> Flask:
     d.init_db(db_path)
     os.makedirs(EVIDENCE_DIR, exist_ok=True)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     app = Flask(__name__, template_folder="templates")
     app.secret_key = os.environ.get("BAQYLAU_SECRET", "baqylau-local")
     app.config["DB"] = db_path
@@ -227,10 +231,28 @@ def create_app(db_path: str = DB) -> Flask:
         if request.method == "POST":
             try:
                 qs = json.loads(request.form.get("questions_json", "[]"))
-                assert isinstance(qs, list)
+                assert isinstance(qs, list) and all(
+                    q.get("q", "").strip() and
+                    len([o for o in q.get("options", []) if str(o).strip()]) >= 2
+                    for q in qs)
             except Exception:
                 return render_template("exam_form.html", user=me(),
-                                       error="Вопросы — корректный JSON (см. пример)")
+                                       error="У каждого вопроса нужен текст и минимум 2 варианта")
+            # question images: qimg_<idx> files
+            import secrets as _s
+
+            for i, q in enumerate(qs):
+                f = request.files.get(f"qimg_{i}")
+                if f and f.filename:
+                    ext = os.path.splitext(f.filename)[1].lower()
+                    if ext in IMG_EXTS:
+                        data = f.read()
+                        if data and len(data) <= IMG_MAX_BYTES:
+                            name = f"q_{_s.token_hex(6)}{ext}"
+                            with open(os.path.join(UPLOAD_DIR, name), "wb") as fh:
+                                fh.write(data)
+                            q["image"] = name
+            c = con()
             c = con()
             try:
                 c.execute(
@@ -298,11 +320,13 @@ def create_app(db_path: str = DB) -> Flask:
         try:
             rows = c.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 300").fetchall()
             evs = c.execute(
-                "SELECT e.*, u.full_name AS student FROM evidence e "
-                "LEFT JOIN users u ON u.id=e.student_id ORDER BY e.id DESC LIMIT 200"
+                "SELECT e.*, COALESCE(u.full_name, u.username, 'ученик #' || e.student_id) AS student "
+                "FROM evidence e LEFT JOIN users u ON u.id=e.student_id "
+                "ORDER BY e.id DESC LIMIT 200"
             ).fetchall()
             subs = c.execute(
-                "SELECT s.*, u.full_name AS student, ex.title AS exam FROM submissions s "
+                "SELECT s.*, COALESCE(u.full_name, u.username, 'ученик #' || s.student_id) AS student, "
+                "COALESCE(ex.title, '—') AS exam FROM submissions s "
                 "LEFT JOIN users u ON u.id=s.student_id "
                 "LEFT JOIN sessions se ON se.id=s.session_id "
                 "LEFT JOIN exams ex ON ex.id=se.exam_id "
@@ -335,6 +359,28 @@ def create_app(db_path: str = DB) -> Flask:
         finally:
             c.close()
 
+    @app.route("/users/<int:uid>/delete", methods=["POST"])
+    @login_required("admin")
+    def user_del(uid):
+        c = con()
+        try:
+            me_id = me()["id"]
+            if uid == me_id:
+                return "Нельзя удалить себя", 400
+            target = c.execute("SELECT role FROM users WHERE id=?", (uid,)).fetchone()
+            if target is None:
+                return redirect(url_for("users"))
+            if target["role"] == "admin":
+                n = c.execute("SELECT COUNT(*) n FROM users WHERE role='admin'").fetchone()["n"]
+                if n <= 1:
+                    return "Нельзя удалить последнего админа", 400
+            c.execute("DELETE FROM users WHERE id=?", (uid,))
+            c.commit()
+            d.audit(c, me()["username"], "user_delete", str(uid))
+        finally:
+            c.close()
+        return redirect(url_for("users"))
+
     # ---------- web: notifications + evidence ----------
     @app.route("/notifications", methods=["GET", "POST"])
     @login_required("teacher", "admin")
@@ -353,10 +399,39 @@ def create_app(db_path: str = DB) -> Flask:
         finally:
             c.close()
 
+    @app.route("/notifications/<int:nid>/delete", methods=["POST"])
+    @login_required("teacher", "admin")
+    def notification_del(nid):
+        c = con()
+        try:
+            c.execute("DELETE FROM notifications WHERE id=?", (nid,))
+            c.commit()
+            d.audit(c, me()["username"], "notification_delete", str(nid))
+            if request.is_json or request.headers.get("X-Requested-With") == "fetch":
+                return jsonify({"ok": True})
+            return redirect(url_for("notifications"))
+        finally:
+            c.close()
+
     @app.route("/evidence/<path:name>")
     @login_required("teacher", "admin")
     def evidence_file(name):
         return send_from_directory(os.path.abspath(EVIDENCE_DIR), name)
+
+    @app.route("/uploads/<path:name>")
+    def upload_file(name):
+        """Question images: web session or student token required."""
+        u = me()
+        if not u:
+            tok = request.headers.get("X-Token", "")
+            c0 = con()
+            try:
+                u = d.user_by_token(c0, tok)
+            finally:
+                c0.close()
+        if not u:
+            return "Forbidden", 403
+        return send_from_directory(os.path.abspath(UPLOAD_DIR), name)
 
     @app.template_filter("dt")
     def _dt(ts):
@@ -452,7 +527,9 @@ def create_app(db_path: str = DB) -> Flask:
                 return jsonify({"error": "no active exam"}), 404
             e = c.execute("SELECT * FROM exams WHERE id=?", (s["exam_id"],)).fetchone()
             qs = d.jload(e["questions_json"], [])
-            public = [{"q": q.get("q", ""), "options": q.get("options", [])} for q in qs]
+            public = [{"q": q.get("q", ""), "options": q.get("options", []),
+                       "image": ("/uploads/" + q["image"]) if q.get("image") else None}
+                      for q in qs]
             return jsonify({"exam_id": e["id"], "title": e["title"],
                             "duration_min": e["duration_min"], "questions": public})
         finally:

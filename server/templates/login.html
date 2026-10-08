@@ -1,30 +1,64 @@
 {% extends "base.html" %}{% block t %}Вход{% endblock %}{% block b %}
-<div class="hero">
-  <div class="hero-left">
-    <div class="eyebrow"><img src="/static/brand.svg" alt="" style="width:26px;height:26px"><span class="n">01</span> BAQYLAU.AI · QOSTANAI · ЛОКАЛЬНЫЙ ПРОКТОРИНГ</div>
-    <h1>Честный экзамен.<br><span class="thin">Всё локально.</span><span class="dot">.</span></h1>
-    <p class="lede">Камера, взгляд и смартфон — под контролем.
-    Панель преподавателя лёгкая: вся тяжёлая работа идёт в приложении ученика.</p>
-    <div class="feats">
-      <div class="feat"><b>📱</b><span>Смартфон<br>YOLO</span></div>
-      <div class="feat"><b>👀</b><span>Взгляд<br>и голова</span></div>
-      <div class="feat"><b>🔒</b><span>Защита<br>окружения</span></div>
+<div class="auth-top" style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin:14px 0 40px">
+  <a class="brandline" href="/login" aria-label="Baqylau.ai">
+    <span class="mark"><img src="/static/brand.svg" alt="" style="width:40px;height:40px"></span>
+    <span class="num">01</span>
+    <small><strong>BAQYLAU.AI</strong> · QOSTANAI · ЛОКАЛЬНЫЙ ПРОКТОРИНГ</small>
+  </a>
+  <div class="top-note"><span class="status-dot"></span>Локальный режим • данные не уходят в облако</div>
+</div>
+<section class="auth-hero">
+  <div>
+    <div class="eyebrow"><b>01</b> BAQYLAU.AI · QOSTANAI · ПРОКТОРИНГ</div>
+    <h1>Честный экзамен.<br><span class="accent">Всё локально.</span></h1>
+    <p class="lead">Камера, взгляд и смартфон — под контролем. Панель преподавателя простая:
+    вся тяжёлая работа выполняется локально, без лишних облачных сервисов.</p>
+    <div class="features reveal">
+      <article class="feature" style="background:linear-gradient(145deg,rgba(212,245,165,.56),rgba(255,255,255,.30))">
+        <div class="icon"><svg width="20" height="20"><use href="#i-phone"/></svg></div><strong>Смартфон</strong><span>YOLO</span>
+      </article>
+      <article class="feature" style="background:linear-gradient(145deg,rgba(216,212,255,.54),rgba(255,255,255,.30))">
+        <div class="icon"><svg width="20" height="20"><use href="#i-eye"/></svg></div><strong>Взгляд<br>и голова</strong><span>анализ поведения</span>
+      </article>
+      <article class="feature" style="background:linear-gradient(145deg,rgba(255,212,236,.54),rgba(255,255,255,.30))">
+        <div class="icon"><svg width="20" height="20"><use href="#i-lock"/></svg></div><strong>Защита<br>окружения</strong><span>контроль рабочего места</span>
+      </article>
     </div>
-    <div class="stats"><div><small>ОБЛАКА</small><b>0 — всё дома</b></div>
-    <div><small>СТОЛПА</small><b>CV + Security</b></div>
-    <div><small>РЕЖИМ</small><b>LAN / офлайн</b></div></div>
+    <div class="meta reveal">
+      <div class="meta-item"><small>Облака</small><b>0 — всё дома</b></div>
+      <div class="meta-item"><small>Стек</small><b>CV + Security</b></div>
+      <div class="meta-item"><small>Режим</small><b>LAN / офлайн</b></div>
+    </div>
   </div>
-  <div class="hero-right">
-    <div class="glass">
-      <h2>Вход</h2>
-      <p class="muted">Преподаватель / администратор</p>
+  <div>
+    <section class="auth-card" aria-labelledby="login-title">
+      <h2 id="login-title">Вход в систему</h2>
+      <p class="sub" style="margin:0 0 20px;color:var(--mut);font-size:14px">Для преподавателя или администратора. Авторизация внутри локальной сети.</p>
       {% if error %}<p class="err">{{ error }}</p>{% endif %}
       <form method="post">
-        <input name="username" placeholder="Логин" required autocomplete="username">
-        <input name="password" type="password" placeholder="Пароль" required autocomplete="current-password">
-        <button class="btn dark big" type="submit">Войти →</button>
+        <label class="fl" for="username">Логин</label>
+        <input id="username" name="username" type="text" autocomplete="username" placeholder="Введите логин" required>
+        <label class="fl" for="password">Пароль</label>
+        <div class="passwrap">
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Введите пароль" required>
+          <button class="passtoggle" id="togglePassword" type="button" aria-label="Показать пароль"><svg width="18" height="18" class="pw-on"><use href="#i-eye"/></svg><svg width="18" height="18" class="pw-off" style="display:none"><use href="#i-eyeoff"/></svg></button>
+        </div>
+        <button class="auth-submit" type="submit" style="margin-top:14px">Войти в панель →</button>
       </form>
-      <p class="hint">Первый запуск: <b>admin / admin123</b> — смените после входа.</p>
-    </div>
+      <div class="auth-secure"><span class="shield"><svg width="16" height="16"><use href="#i-shield"/></svg></span><span>Сессия работает в локальной сети. Доступ можно ограничить вашим LAN.</span></div>
+    </section>
   </div>
-</div>{% endblock %}
+</section>
+<script>
+(function(){
+var p=document.getElementById('password'),t=document.getElementById('togglePassword');
+if(t)t.onclick=function(){var v=p.type==='text';p.type=v?'password':'text';
+t.querySelector('.pw-on').style.display=v?'':'none';t.querySelector('.pw-off').style.display=v?'none':'';};
+var items=document.querySelectorAll('.reveal');
+if('IntersectionObserver' in window){
+var o=new IntersectionObserver(function(es,ob){es.forEach(function(e,i){if(e.isIntersecting){e.target.style.animationDelay=(Array.prototype.indexOf.call(items,e.target)*90)+'ms';e.target.classList.add('visible');ob.unobserve(e.target);}});},{threshold:.16});
+items.forEach(function(i){o.observe(i);});
+}else{items.forEach(function(i){i.classList.add('visible');});
+}})();
+</script>
+{% endblock %}
