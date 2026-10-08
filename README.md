@@ -1,89 +1,77 @@
-# Baqylau — локальный AI-прокторинг (YOLO + MediaPipe + защита окружения)
+# 🍈 Baqylau.ai — локальный AI-прокторинг
 
-Dual-modal refactor of `aungkhantmyat/The-Online-Exam-Proctor`.
+**[Русский](README.md) | [Қазақша](README_KK.md)**
 
-## Structure
+Локальная система контроля онлайн-экзаменов: детекция смартфонов (YOLO),
+контроль взгляда и головы (MediaPipe), защита рабочего окружения
+(блокировка горячих клавиш и чужих окон). Вся обработка — внутри сети
+учебного заведения, данные студентов никуда не уходят.
 
-```
-proctoring_system/
-├── config.py
-├── main.py          # OpenCV HUD (console)
-├── main_gui.py      # Soft Bento Grid desktop HUD (PySide6)
-├── tools_calibrate_gaze.py
-├── requirements.txt
-├── core/vision/   detector.py, pose_gaze.py, vision_engine.py
-├── core/eeg/      stream.py, signal_proc.py, metrics.py, eeg_engine.py
-├── core/fusion/   synchronizer.py, risk_engine.py, alert_manager.py
-├── ui/dashboard.py
-├── ui/bento_app.py
-└── data/logs/
-```
+Кейс: Qostanai Industry Hackathon, «Локальный прокторинг» · Demo Day 16.10.2026.
 
-## Quickstart
+## Как это работает
+
+- **Приложение ученика** (десктоп, PySide6): вход по логину, камера
+  включается только после старта экзамена преподавателем. Во время
+  экзамена показывает только тест — ни камеры, ни риска, ни ленты нарушений.
+- **Веб-панель преподавателя** (Flask, лёгкая): карточки учеников с
+  миниатюрами камер, риск, главные нарушения, запуск/остановка экзамена,
+  уведомления с фото/видео-доказательствами.
+- **Админ** видит всё: пользователи, аудит действий, все доказательства
+  и результаты.
+
+## Что детектируется
+
+| Событие | Уровень |
+|---|---|
+| Телефон в кадре / поднят к экрану (съёмка) | CRITICAL |
+| Взгляд вниз + телефон (чтение с устройства) | CRITICAL |
+| Голова повёрнута дольше 3 с | HIGH |
+| Взгляд мимо дольше 4 с | HIGH |
+| Второе лицо, уход из окна экзамена, запрещённые клавиши | HIGH/MEDIUM |
+| RISK 100 | фото + ~9 с видео → уведомление + локально (+ Drive) |
+
+## Быстрый старт
 
 ```bash
 pip install -r requirements.txt
 pip install PySide6
-# Bento GUI, simulated EEG (dev without headband):
-python main_gui.py --simulate-eeg
-# vision-only (no headband):
-python main.py --no-eeg
-# real Muse 1.3 via BrainFlow BLE:
-python main.py --notch 50
 ```
 
-## Student app (Baqylau Web + desktop)
-
-Teacher PC (light web panel): `cd baqylau` then `python -m server.app`
-→ `http://<lan-ip>:5050` (admin/admin123 first run).
-
-Student PCs (heavy work stays here): the app opens a **login page**
-(server + login + password, remembered). Camera turns on only after the
-teacher starts the exam; thumbnails + risk fly to the panel every few
-seconds; RISK 100 saves photo + video evidence locally and uploads it.
-
-Keys (console): `q` quit, `s` snapshot. GUI: buttons Snapshot / 🎯 Калибровка / Pause / Quit.
-
-## Workstation protection (case §2.3)
-
-- Hotkey lockdown: Alt+Tab, Ctrl+C/V/X/A/T/W, Win, PrtScn, Alt+F4 — suppressed
-  via `keyboard` + counted as HIGH violations (`core/security/hotkeys.py`).
-- Focus guard: leaving the exam window > grace seconds → HIGH + screen capture
-  (`core/security/focus.py`). Baseline = foreground window at start.
-- Off: `--no-security`. Deps install: `pip install keyboard pygetwindow pyautogui`.
-
-## Post-exam report
-
+**Панель (ПК преподавателя):**
 ```bash
-python tools_report.py --student "Dmitry Gorbunov"
-# -> data/logs/report_*.html : timeline + snapshot gallery + verdict
+cd baqylau
+python -m server.app   # http://<ip>:5050, первый вход: admin / admin123
 ```
 
-## Calibration (gaze) — opt-in
+**Ученик:** `python main_gui.py` → окно входа (сервер + логин/пароль
+или локальный режим) → тест появляется после старта экзамена.
 
-By default the app starts instantly with fixed thresholds (no waiting).
-If gaze feels off for a particular student/room:
+**Консольный HUD (разработка):** `python main.py --simulate-eeg`
 
-- GUI: 🎯 button — guided 5-point calibration (~8s: center/left/right/up/down),
-  sets personal zero AND thresholds. Quick frontal: `--quick-calib`.
-- Console: `--guided-calib` / `--quick-calib`.
-- During calibration risk is frozen (`CAL`), no events are logged.
-- Diagnose raw numbers: `python tools_calibrate_gaze.py --mirror`.
+## Калибровка взгляда (opt-in)
 
-## EEG indices
+По умолчанию выключена. Кнопка 🎯 — гидовая калибровка по 5 точкам
+(центр/лево/право/верх/низ, ~8 с): персональный ноль и пороги.
+`--quick-calib` — быстрые 2 с. Во время калибровки риск заморожен.
 
-- Focus `β/(θ+α)`, Stress `highβ/α`, Fatigue `(θ+α)/β`
-- Blink: `|AF7/AF8| > 75 uV`; Jaw: temporal gamma spike; 1–40 Hz bandpass + 50/60 Hz notch, Welch PSD.
+## Структура
 
-## Fusion rules
+```
+baqylau/
+├── main_gui.py / main.py   # приложение ученика / консольный HUD
+├── server/                 # веб-панель (Flask + SQLite)
+├── core/vision/            # YOLO-детектор, поза/взгляд
+├── core/eeg/               # Muse EEG (бонус-канал, опционально)
+├── core/fusion/            # риск-движок, синхронизация, алерты
+├── core/security/          # блокировка клавиш, контроль окна
+├── core/net/               # клиент панели (stdlib)
+├── ui/                     # Bento-интерфейс, бренд, QSS
+└── docs/brand.md           # палитра и карта хранилищ
+```
 
-| Vision | EEG | Flag |
-|---|---|---|
-| head-turn | high stress / focus-drop | CRITICAL |
-| gaze-off | relaxed | LOW daydream |
-| gaze-off | high focus | HIGH cheat-sheet |
-| phone/tablet | any | CRITICAL |
-| face-missing | signal loss | HIGH tamper |
-| jaw EMG | focus swing | MEDIUM talking |
+## Где лежат записи
 
-Risk `R(t)∈[0,100]` with exponential decay `exp(-λ·dt)`.
+- ПК ученика: `data/logs/snapshots/` (фото/видео), `events.jsonl`
+- Сервер: `data/evidence/`, база `data/baqylau.db`
+- Google Drive — опционально (`BAQYLAU_DRIVE_FOLDER_ID` + credentials)
